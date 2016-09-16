@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+    <title>Socket.IO chat</title>
+    <style>
+        .container-fluid { margin-bottom: 70px; }
+        #alert-status { position: fixed; top:0; right: 0; width: auto; }
+        #message-form { position: fixed; width: 95%; bottom: 2%; left: 2.5%; right: 2.5%; }
+        #message-form .form-group { width: 100%; }
+        #message-form button { position: absolute; right: 0; top: 0; z-index: 100; min-width: 15% }
+        .bold { font-weight: bold }
+    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/css/bootstrap.min.css" integrity="sha384-2hfp1SzUoho7/TsGGGDaFdsuuDL0LX2hnUp6VkX3CUQ2K4K+xjboZdsXyp4oUHZj" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container-fluid">
+        <div id="alert-status" class="alert alert-warning" role="alert">Loading...</div>
+        <div class="col-md-3">
+            <div class="row">
+                <h2>Users <small id="current-user"></small></h2>
+                <div id="users"></div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="row">
+                <h2>Messages</h2>
+                <div id="messages"></div>
+            </div>
+        </div>
+        <form id="message-form" class="form-inline" action="">
+            <div class="form-group">
+                <label class="sr-only" for="message">Message</label>
+                <div class="input-group">
+                    <div class="input-group-addon">
+                        <i class="fa fa-2x fa-comments-o" aria-hidden="true"></i>
+                    </div>
+                    <input type="text" class="form-control form-control-lg" id="message" placeholder="Your message here..." autocomplete="off" autofocus>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-lg btn-primary">Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script>
+        var socket = io(),
+            username = null,
+            status = $('#alert-status'),
+            users = $('#users'),
+            messages = $('#messages'),
+            messageInput = $('#message');
+
+        function updateStatus(text, status) {
+            $('#alert-status').removeClass('alert-danger alert-warning alert-success').addClass('alert-'+status).html(text);
+        }
+
+        $('#message-form').submit(() => {
+            socket.emit('chat.message', messageInput.val());
+            messageInput.val('');
+
+            return false;
+        });
+
+        socket.on('connect', (data) => {
+            updateStatus('Connected', 'success');
+
+//            if (typeof(Storage) !== undefined) {
+//                username = localStorage.getItem('username');
+//            }
+//
+//            while (username === null || username === '') {
+//                username = prompt('What is your username?');
+//
+//                if (typeof(Storage) !== undefined) {
+//                    localStorage.setItem('username', username);
+//                }
+//            }
+
+            if (username === null) {
+                while (username === undefined || username === null || username === '') {
+                    username = prompt('What is your username?');
+                }
+            }
+
+            $('#current-user').html(username);
+
+            socket.emit('chat.join', username);
+        });
+
+        // When a user pick his username
+        socket.on('chat.join', (json) => {
+            console.log('chat.join => ', json);
+
+            let data = JSON.parse(json);
+
+            users.append($(`
+                <li data-username="${data.username}">
+                    ${data.username}
+                </li>
+            `));
+        });
+
+        socket.on('chat.add_user', (json) => {
+            console.log('chat.add_user => ', json);
+
+            let data = JSON.parse(json);
+
+            console.log('add_user => '+data.username);
+
+            users.append($(`
+                <li data-username="${data.username}">
+                    ${data.username}
+                </li>
+            `));
+        });
+
+        socket.on('chat.message', (json) => {
+            console.log('chat.message => ', json);
+
+            let data = JSON.parse(json);
+            let currentUsername = username === data.username ? 'me' : data.username;
+            let className = username === data.username ? 'text-success' : '';
+
+            messages.prepend($(`
+                <p data-username="${data.username}">
+                    <span class="bold ${className}">${currentUsername}: </span> ${data.message}
+                </p>
+            `));
+        });
+
+        socket.on('chat.disconnect', (json) => {
+            console.log('chat.disconnect => ', json);
+
+            let data = JSON.parse(json);
+
+            console.log(json,data);
+
+            console.log(data.username+' leave channel');
+
+            users.find(`li[data-username="${data.username}"]`).remove();
+        });
+
+        socket.on('disconnect', () => {
+            updateStatus('Connection lost, trying to reconnect...', 'danger');
+        });
+    </script>
+</body>
+</html>
