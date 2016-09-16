@@ -1,5 +1,17 @@
 # Chat using Node/Express ~~and React~~ (Redis)
 
+## Intro
+
+A small real time chat build with Node/Express using Redis.
+
+**Redis** is required (storage of users and messages, IP included).
+
+## Installation
+
+`npm install` to install dependencies.
+
+Run node server with `node app.js` and follow instructions (server run on [http://localhost:3000](http://localhost:3000))
+
 ## API
 
 ## Connection and other Events
