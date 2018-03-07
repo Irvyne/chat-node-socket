@@ -1,4 +1,4 @@
-# Chat using Node/Express ~~and React~~ (Redis)
+# Chat using Node/Express & Socket.io *(with data backup by Redis)*
 
 ## Intro
 
@@ -23,7 +23,7 @@ Run node server with `yarn start` and follow instructions (server run on [http:/
 Open socket on client side.
 
 ```js
-let socket = io();
+const socket = io();
 ```
 
 #### chat.join (receive)
