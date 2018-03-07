@@ -8,9 +8,9 @@ A small real time chat build with Node/Express using Redis.
 
 ## Installation
 
-`npm install` to install dependencies.
+`yarn install` to install dependencies.
 
-Run node server with `node app.js` and follow instructions (server run on [http://localhost:3000](http://localhost:3000))
+Run node server with `yarn start` and follow instructions (server run on [http://localhost:3000](http://localhost:3000))
 
 ## API
 
