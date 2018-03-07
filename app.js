@@ -1,13 +1,14 @@
-let app = require('express')(),
-    http = require('http').Server(app),
+require('colors');
+
+const app = require('express')(),
+    http = require('http').createServer(app),
     io = require('socket.io')(http),
     redis = require("redis"),
     redisClient = redis.createClient(),
-    requestIp = require('request-ip'),
-    colors = require('colors');
+    requestIp = require('request-ip');
 
 function consoleLog(event, method, msg = undefined) {
-    console.log(event.red+'.'+method.yellow +(msg !== undefined ? (' => '+msg) : ''));
+    console.log(event.red + '.' + method.yellow + (msg !== undefined ? (' => ' + msg) : ''));
 }
 
 app.get('/', (req, res) => {
@@ -18,13 +19,13 @@ io.on('connection', (socket) => {
     consoleLog('socket', 'connection', 'socket opened');
 
     socket.on('chat.join', (username) => {
-        consoleLog('chat', 'join', ('['+username+']').bold+' join channel');
-
         // Save the IP and the name of the user in the current socket
         socket.ip = requestIp.getClientIp(socket.request);
         socket.username = username;
 
-        let json = JSON.stringify({username: socket.username});
+        consoleLog('chat', 'join', `[${socket.username}]`.bold + ' join channel with IP ' + `${socket.ip}`.yellow);
+
+        const json = JSON.stringify({username: socket.username});
 
         // Emit event "chat.join" to connected users (without the current one)
         socket.broadcast.emit('chat.join', json);
@@ -51,12 +52,12 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat.message', (message) => {
-        consoleLog('chat', 'message', ('['+socket.username+']').bold+' '+message);
+        consoleLog('chat', 'message', ('[' + socket.username + ']').bold + ' ' + message);
 
-        let json = JSON.stringify({username: socket.username, message});
+        const json = JSON.stringify({username: socket.username, message});
 
         redisClient.lpush('messages', json, (err, reply) => {
-            console.log('redis lpush => '+reply);
+            console.log('redis lpush => ' + reply);
         });
 
         // Emit event "chat.message" to connected users (without the current one)
@@ -67,7 +68,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        consoleLog('socket', 'disconnect', ('['+socket.username+']').bold+' socket closed');
+        consoleLog('socket', 'disconnect', ('[' + socket.username + ']').bold + ' socket closed');
 
         if (socket.username !== undefined) {
             // Emit event "chat.disconnect" to connected users (without the current one)
@@ -79,4 +80,4 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(3000, () => console.log('Listening on '+'http://localhost:3000\n'.green));
+http.listen(3000, () => console.log('Listening on ' + 'http://localhost:3000\n'.green));
